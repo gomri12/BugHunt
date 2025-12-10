@@ -72,13 +72,35 @@ export const Dashboard: React.FC = () => {
           });
         }
       } else if (data.type === 'BUG_RESOLVED') {
-        if (soundEnabled) playSuccessSound();
-        confetti({
-          particleCount: 50,
-          spread: 60,
-          origin: { y: 0.8 },
-          colors: ['#00ff9d', '#ffffff']
-        });
+        // Play gong sound and show fireworks for resolved bugs
+        if (soundEnabled) {
+          playGongSound().catch(err => console.error('Gong sound error:', err));
+        }
+        if (typeof confetti !== 'undefined') {
+          // Bigger, more prominent fireworks for resolved bugs
+          confetti({
+            particleCount: 150,
+            spread: 80,
+            origin: { y: 0.7 },
+            colors: ['#00ff9d', '#ffffff', '#00ccff'],
+            startVelocity: 40,
+            gravity: 0.9,
+            ticks: 300,
+            shapes: ['circle', 'square'],
+          });
+          // Second burst for extra celebration
+          setTimeout(() => {
+            confetti({
+              particleCount: 100,
+              spread: 60,
+              origin: { y: 0.6 },
+              colors: ['#00ff9d', '#ffffff'],
+              startVelocity: 30,
+              gravity: 0.8,
+              ticks: 200,
+            });
+          }, 200);
+        }
       } else if (data.type === 'SESSION_UPDATE' && data.payload?.type === 'MILESTONE') {
         if (soundEnabled) playMilestoneSound();
         confetti({

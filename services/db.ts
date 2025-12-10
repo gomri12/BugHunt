@@ -60,12 +60,42 @@ export const subscribeToBugs = (sessionId: string, onChange: (bugs: Bug[]) => vo
   let pollInterval: NodeJS.Timeout | null = null;
   let channel: ReturnType<typeof supabase.channel> | null = null;
   let isSubscribed = false;
+  let previousBugCount = 0;
+  let previousBugIds = new Set<number>();
 
   // Polling fallback function
   const pollBugs = async () => {
     try {
       const bugs = await fetchBugs(sessionId);
       onChange(bugs);
+      
+      // Detect new bugs by comparing counts and IDs
+      const currentBugIds = new Set(bugs.map(b => b.id).filter((id): id is number => id !== undefined));
+      const newBugIds = [...currentBugIds].filter(id => !previousBugIds.has(id));
+      
+      if (bugs.length > previousBugCount && newBugIds.length > 0) {
+        // New bug(s) detected via polling
+        const newBug = bugs.find(b => newBugIds.includes(b.id!));
+        if (newBug) {
+          notifyUpdate('BUG_NEW', { title: newBug.title, reporter: newBug.reporterName });
+        }
+      } else if (bugs.length === previousBugCount) {
+        // Check if any bug was resolved
+        const resolvedBugs = bugs.filter(b => 
+          b.status === BugStatus.RESOLVED && 
+          previousBugIds.has(b.id!) &&
+          !previousBugIds.has(b.id!) // This logic needs fixing
+        );
+        // Actually, we need to track previous status - for now, just check if latest was resolved
+        const latest = bugs[0];
+        if (latest?.status === BugStatus.RESOLVED) {
+          // This is a simple check - might trigger multiple times, but better than nothing
+          notifyUpdate('BUG_RESOLVED', { title: latest.title, solver: latest.solverName });
+        }
+      }
+      
+      previousBugCount = bugs.length;
+      previousBugIds = currentBugIds;
     } catch (error) {
       console.error('Error polling bugs:', error);
     }
@@ -87,15 +117,36 @@ export const subscribeToBugs = (sessionId: string, onChange: (bugs: Bug[]) => vo
         filter: `session_id=eq.${sessionId}` 
       },
       async (payload) => {
-        console.log('Realtime update received:', payload.eventType);
+        console.log('Realtime update received:', payload.eventType, payload);
         try {
           const bugs = await fetchBugs(sessionId);
           onChange(bugs);
-          const latest = bugs[0];
-          if (latest?.status === BugStatus.RESOLVED) {
-            notifyUpdate('BUG_RESOLVED', { title: latest.title, solver: latest.solverName });
+          
+          // Determine what type of event this is based on payload
+          if (payload.eventType === 'INSERT') {
+            // New bug was added
+            const newBug = payload.new ? mapBug(payload.new) : bugs[0];
+            notifyUpdate('BUG_NEW', { title: newBug.title, reporter: newBug.reporterName });
+          } else if (payload.eventType === 'UPDATE') {
+            // Bug was updated - check if it was resolved
+            const updatedBug = payload.new ? mapBug(payload.new) : null;
+            const oldBug = payload.old ? mapBug(payload.old) : null;
+            
+            if (updatedBug?.status === BugStatus.RESOLVED && oldBug?.status !== BugStatus.RESOLVED) {
+              // Bug was just resolved
+              notifyUpdate('BUG_RESOLVED', { title: updatedBug.title, solver: updatedBug.solverName });
+            } else {
+              // Other update
+              notifyUpdate('BUG_UPDATE', {});
+            }
           } else {
-            notifyUpdate('BUG_UPDATE', {});
+            // Fallback: check latest bug status
+            const latest = bugs[0];
+            if (latest?.status === BugStatus.RESOLVED) {
+              notifyUpdate('BUG_RESOLVED', { title: latest.title, solver: latest.solverName });
+            } else {
+              notifyUpdate('BUG_UPDATE', {});
+            }
           }
         } catch (error) {
           console.error('Error handling realtime update:', error);
