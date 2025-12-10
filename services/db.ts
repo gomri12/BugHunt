@@ -57,26 +57,83 @@ export const fetchBugs = async (sessionId: string) => {
 };
 
 export const subscribeToBugs = (sessionId: string, onChange: (bugs: Bug[]) => void) => {
-  const channel = supabase
-    .channel(`bugs-${sessionId}`)
+  let pollInterval: NodeJS.Timeout | null = null;
+  let channel: ReturnType<typeof supabase.channel> | null = null;
+  let isSubscribed = false;
+
+  // Polling fallback function
+  const pollBugs = async () => {
+    try {
+      const bugs = await fetchBugs(sessionId);
+      onChange(bugs);
+    } catch (error) {
+      console.error('Error polling bugs:', error);
+    }
+  };
+
+  // Set up Supabase Realtime subscription
+  channel = supabase
+    .channel(`bugs-${sessionId}`, {
+      config: {
+        broadcast: { self: true },
+      },
+    })
     .on(
       'postgres_changes',
-      { event: '*', schema: 'public', table: 'bugs', filter: `session_id=eq.${sessionId}` },
-      async () => {
-        const bugs = await fetchBugs(sessionId);
-        onChange(bugs);
-        const latest = bugs[0];
-        if (latest?.status === BugStatus.RESOLVED) {
-          notifyUpdate('BUG_RESOLVED', { title: latest.title, solver: latest.solverName });
-        } else {
-          notifyUpdate('BUG_UPDATE', {});
+      { 
+        event: '*', 
+        schema: 'public', 
+        table: 'bugs', 
+        filter: `session_id=eq.${sessionId}` 
+      },
+      async (payload) => {
+        console.log('Realtime update received:', payload.eventType);
+        try {
+          const bugs = await fetchBugs(sessionId);
+          onChange(bugs);
+          const latest = bugs[0];
+          if (latest?.status === BugStatus.RESOLVED) {
+            notifyUpdate('BUG_RESOLVED', { title: latest.title, solver: latest.solverName });
+          } else {
+            notifyUpdate('BUG_UPDATE', {});
+          }
+        } catch (error) {
+          console.error('Error handling realtime update:', error);
         }
       }
     )
-    .subscribe();
+    .subscribe((status) => {
+      console.log('Subscription status:', status);
+      if (status === 'SUBSCRIBED') {
+        isSubscribed = true;
+        // Stop polling if realtime is working
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          pollInterval = null;
+        }
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.warn('Realtime subscription failed, falling back to polling');
+        isSubscribed = false;
+        // Start polling as fallback
+        if (!pollInterval) {
+          pollInterval = setInterval(pollBugs, 2000); // Poll every 2 seconds
+        }
+      }
+    });
+
+  // Initial poll and set up polling as fallback
+  pollBugs();
+  if (!isSubscribed) {
+    pollInterval = setInterval(pollBugs, 2000);
+  }
 
   return () => {
-    supabase.removeChannel(channel);
+    if (channel) {
+      supabase.removeChannel(channel);
+    }
+    if (pollInterval) {
+      clearInterval(pollInterval);
+    }
   };
 };
 

@@ -71,5 +71,22 @@ CREATE TRIGGER update_bugs_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- Enable Realtime for bugs table (for live updates)
-ALTER PUBLICATION supabase_realtime ADD TABLE bugs;
+-- Note: This may fail if the table is already in the publication, which is fine
+DO $$
+BEGIN
+    -- Try to add bugs table to realtime publication
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE bugs;
+    EXCEPTION WHEN OTHERS THEN
+        -- Table might already be in publication, which is fine
+        RAISE NOTICE 'bugs table may already be in supabase_realtime publication';
+    END;
+    
+    -- Also add sessions table for completeness
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE sessions;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'sessions table may already be in supabase_realtime publication';
+    END;
+END $$;
 
