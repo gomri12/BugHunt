@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BugSeverity, BugStatus } from '../types';
-import { db, notifyUpdate, GLOBAL_SESSION_ID } from '../services/db';
+import { addBug, GLOBAL_SESSION_ID } from '../services/db';
 import { Plus, Loader2 } from 'lucide-react';
 
 interface BugFormProps {
@@ -19,18 +19,15 @@ export const BugForm: React.FC<BugFormProps> = ({ username }) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await db.bugs.add({
+      await addBug(GLOBAL_SESSION_ID, {
         sessionId: GLOBAL_SESSION_ID,
         title: formData.title,
         description: formData.description,
         severity: formData.severity,
         status: BugStatus.NEW,
         reporterName: username,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        solverName: undefined,
       });
-      
-      notifyUpdate('BUG_NEW', { title: formData.title, reporter: username });
 
       // Reset form
       setFormData({

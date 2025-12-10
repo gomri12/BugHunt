@@ -1,6 +1,5 @@
 import React from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db, notifyUpdate, GLOBAL_SESSION_ID } from '../services/db';
+import { useBugs, updateBug, GLOBAL_SESSION_ID } from '../services/db';
 import { Bug, BugSeverity, BugStatus } from '../types';
 import { formatDistanceToNow } from 'date-fns';
 import { Check, Clock, User, ArrowRight, XCircle } from 'lucide-react';
@@ -12,45 +11,23 @@ interface BugListProps {
 }
 
 export const BugList: React.FC<BugListProps> = ({ readonly = false, username }) => {
-  const bugs = useLiveQuery(() => 
-    db.bugs.where('sessionId').equals(GLOBAL_SESSION_ID).reverse().sortBy('createdAt')
-  );
+  const { bugs } = useBugs(GLOBAL_SESSION_ID);
 
   if (!bugs) return <div className="text-center py-8 text-neutral-500">Loading bugs...</div>;
   if (bugs.length === 0) return <div className="text-center py-12 text-neutral-500 border border-dashed border-neutral-800 rounded-xl">No bugs reported yet. Start hunting!</div>;
 
   const handleStatusChange = async (bug: Bug, newStatus: BugStatus) => {
     if (!bug.id) return;
-    
-    const updates: Partial<Bug> = { 
-      status: newStatus, 
-      updatedAt: new Date() 
-    };
-
-    await db.bugs.update(bug.id, updates);
-    notifyUpdate('BUG_UPDATE', { id: bug.id, status: newStatus });
+    await updateBug(bug.id, { status: newStatus });
   };
 
   const handleResolve = async (bug: Bug) => {
     if (!bug.id || !username) return;
 
-    await db.bugs.update(bug.id, {
+    await updateBug(bug.id, {
         status: BugStatus.RESOLVED,
         solverName: username,
-        updatedAt: new Date()
     });
-    
-    // Check if this solver hit a milestone
-    const solvedCount = await db.bugs
-        .where('sessionId').equals(GLOBAL_SESSION_ID)
-        .filter(b => b.solverName === username && b.status === BugStatus.RESOLVED)
-        .count();
-
-    if (solvedCount % 5 === 0) {
-        notifyUpdate('SESSION_UPDATE', { type: 'MILESTONE', solver: username, count: solvedCount });
-    } else {
-        notifyUpdate('BUG_RESOLVED', { title: bug.title, solver: username });
-    }
   };
 
   const severityColor = (sev: BugSeverity) => {

@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db, onUpdate, GLOBAL_SESSION_ID } from '../services/db';
+import { useBugs, onUpdate, GLOBAL_SESSION_ID } from '../services/db';
 import { StatsCards } from '../components/StatsCards';
 import { BugList } from '../components/BugList';
 import { LeaderboardChart } from '../components/Charts';
@@ -20,9 +19,7 @@ export const Dashboard: React.FC = () => {
     if (stored) setUsername(stored);
   }, []);
   
-  const bugs = useLiveQuery(() => 
-    db.bugs.where('sessionId').equals(GLOBAL_SESSION_ID).toArray()
-  );
+  const { bugs } = useBugs(GLOBAL_SESSION_ID);
 
   // Stats calculation
   const stats = useMemo(() => {

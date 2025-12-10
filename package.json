@@ -12,6 +12,7 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.48.0",
     "canvas-confetti": "^1.9.2",
     "clsx": "^2.1.0",
     "date-fns": "^3.3.1",

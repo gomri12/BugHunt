@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { db } from '../services/db';
+import { createSession } from '../services/db';
 import { ArrowRight, Play, Bug } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -8,12 +8,12 @@ export const Home: React.FC = () => {
   const navigate = useNavigate();
   const [eventName, setEventName] = useState('');
 
-  const createSession = async (e: React.FormEvent) => {
+  const handleCreateSession = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!eventName.trim()) return;
 
     const id = uuidv4();
-    await db.sessions.add({
+    await createSession({
       id,
       name: eventName,
       startTime: new Date(),
@@ -38,7 +38,7 @@ export const Home: React.FC = () => {
         Gamify your bug bash. Track reports in real-time, compete on leaderboards, and celebrate every fix.
       </p>
 
-      <form onSubmit={createSession} className="w-full max-w-md bg-neutral-900/50 p-2 rounded-xl border border-neutral-800 flex items-center shadow-2xl">
+      <form onSubmit={handleCreateSession} className="w-full max-w-md bg-neutral-900/50 p-2 rounded-xl border border-neutral-800 flex items-center shadow-2xl">
         <input
           type="text"
           placeholder="Name your event (e.g. 'Q4 Bug Bash')"

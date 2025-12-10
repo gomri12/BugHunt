@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db, GLOBAL_SESSION_ID, clearDatabase } from '../services/db';
+import { useBugs, GLOBAL_SESSION_ID, clearDatabase } from '../services/db';
 import { BugForm } from '../components/BugForm';
 import { BugList } from '../components/BugList';
 import { exportBugsToCSV } from '../services/export';
@@ -14,9 +13,7 @@ export const ControlPanel: React.FC = () => {
   const [isResetting, setIsResetting] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  const bugs = useLiveQuery(() => 
-    db.bugs.where('sessionId').equals(GLOBAL_SESSION_ID).toArray()
-  );
+  const { bugs } = useBugs(GLOBAL_SESSION_ID);
   
   useEffect(() => {
     const stored = localStorage.getItem('bughunt_username');
@@ -62,7 +59,7 @@ export const ControlPanel: React.FC = () => {
   const handleClearData = async () => {
     setIsResetting(true);
     try {
-        await clearDatabase();
+        await clearDatabase(GLOBAL_SESSION_ID);
         // Give a small delay so user sees the loading state
         setTimeout(() => {
             setShowResetConfirm(false);
