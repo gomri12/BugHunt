@@ -56,3 +56,50 @@ export const playMilestoneSound = () => {
     console.error("Audio playback failed", e);
   }
 }
+
+export const playGongSound = () => {
+  try {
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContext) return;
+    
+    const ctx = new AudioContext();
+    
+    // Create a gong-like sound using multiple oscillators with different frequencies
+    // Gong sound is characterized by a rich harmonic series
+    const baseFreq = 220; // A3
+    const harmonics = [1, 2, 3, 4, 5, 6]; // Fundamental and harmonics
+    
+    harmonics.forEach((harmonic, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+      
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      
+      // Use sawtooth wave for rich harmonics, then filter
+      osc.type = 'sawtooth';
+      osc.frequency.value = baseFreq * harmonic;
+      
+      // Low-pass filter to soften the sound
+      filter.type = 'lowpass';
+      filter.frequency.value = 2000;
+      filter.Q.value = 1;
+      
+      const startTime = ctx.currentTime;
+      const duration = 1.5;
+      
+      // Envelope: quick attack, slow decay
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.15 / harmonic, startTime + 0.01); // Higher harmonics quieter
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+      
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    });
+    
+  } catch (e) {
+    console.error("Gong sound playback failed", e);
+  }
+}

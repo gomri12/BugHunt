@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useBugs, GLOBAL_SESSION_ID, clearDatabase } from '../services/db';
+import { useBugs, GLOBAL_SESSION_ID, clearDatabase, onUpdate } from '../services/db';
 import { BugForm } from '../components/BugForm';
 import { BugList } from '../components/BugList';
 import { exportBugsToCSV } from '../services/export';
+import { playGongSound } from '../services/sound';
+import confetti from 'canvas-confetti';
 import { User, LogOut, Download, ArrowRight, Bug, Trash2, Lock, AlertTriangle, Loader2 } from 'lucide-react';
 
 export const ControlPanel: React.FC = () => {
@@ -19,6 +21,28 @@ export const ControlPanel: React.FC = () => {
     const stored = localStorage.getItem('bughunt_username');
     if (stored) setUsername(stored);
   }, []);
+
+  // Celebrate when bugs are added (from other tabs or users)
+  useEffect(() => {
+    if (!username) return; // Only celebrate if user is logged in
+    
+    const unsub = onUpdate((data) => {
+      if (data.type === 'BUG_NEW') {
+        playGongSound();
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#ff00ff', '#00ff9d', '#00ccff', '#ffffff', '#764abc'],
+          startVelocity: 30,
+          gravity: 0.8,
+          ticks: 200,
+          shapes: ['circle', 'square'],
+        });
+      }
+    });
+    return unsub;
+  }, [username]);
 
   const isAdminUser = nameInput.trim() === 'Omri Glam';
 

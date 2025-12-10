@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { BugSeverity, BugStatus } from '../types';
 import { addBug, GLOBAL_SESSION_ID } from '../services/db';
+import { playGongSound } from '../services/sound';
+import confetti from 'canvas-confetti';
 import { Plus, Loader2 } from 'lucide-react';
 
 interface BugFormProps {
@@ -27,6 +29,19 @@ export const BugForm: React.FC<BugFormProps> = ({ username }) => {
         status: BugStatus.NEW,
         reporterName: username,
         solverName: undefined,
+      });
+
+      // Play gong sound and show fireworks
+      playGongSound();
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#ff00ff', '#00ff9d', '#00ccff', '#ffffff', '#764abc'],
+        startVelocity: 30,
+        gravity: 0.8,
+        ticks: 200,
+        shapes: ['circle', 'square'],
       });
 
       // Reset form

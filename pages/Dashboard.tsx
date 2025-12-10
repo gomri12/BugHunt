@@ -5,7 +5,7 @@ import { BugList } from '../components/BugList';
 import { LeaderboardChart } from '../components/Charts';
 import { BugStatus } from '../types';
 import confetti from 'canvas-confetti';
-import { playSuccessSound, playMilestoneSound } from '../services/sound';
+import { playSuccessSound, playMilestoneSound, playGongSound } from '../services/sound';
 import { Trophy, Volume2, VolumeX, Download } from 'lucide-react';
 import { exportBugsToCSV } from '../services/export';
 
@@ -55,7 +55,19 @@ export const Dashboard: React.FC = () => {
   // Effect to handle real-time events (Sound & Animation)
   useEffect(() => {
     const unsub = onUpdate((data) => {
-      if (data.type === 'BUG_RESOLVED') {
+      if (data.type === 'BUG_NEW') {
+        if (soundEnabled) playGongSound();
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#ff00ff', '#00ff9d', '#00ccff', '#ffffff', '#764abc'],
+          startVelocity: 30,
+          gravity: 0.8,
+          ticks: 200,
+          shapes: ['circle', 'square'],
+        });
+      } else if (data.type === 'BUG_RESOLVED') {
         if (soundEnabled) playSuccessSound();
         confetti({
           particleCount: 50,
