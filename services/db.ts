@@ -204,8 +204,11 @@ export const addBug = async (sessionId: string, input: Omit<Bug, 'id' | 'created
 
 export const updateBug = async (bugId: number, updates: Partial<Bug>) => {
   const payload: any = {};
-  if (updates.status) payload.status = updates.status;
-  if (updates.solverName) payload.solver_name = updates.solverName;
+  if (updates.status !== undefined) payload.status = updates.status;
+  // Handle solverName - can be set to a value or cleared (undefined/null)
+  if (updates.solverName !== undefined) {
+    payload.solver_name = updates.solverName ?? null;
+  }
   payload.updated_at = new Date().toISOString();
 
   const { error } = await supabase.from('bugs').update(payload).eq('id', bugId);

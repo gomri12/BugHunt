@@ -27,7 +27,12 @@ export const BugList: React.FC<BugListProps> = ({ readonly = false, username }) 
 
   const handleStatusChange = async (bug: Bug, newStatus: BugStatus) => {
     if (!bug.id) return;
-    await updateBug(bug.id, { status: newStatus });
+    // When reopening a resolved bug, clear the solver name
+    const updates: Partial<Bug> = { status: newStatus };
+    if (bug.status === BugStatus.RESOLVED && newStatus !== BugStatus.RESOLVED) {
+      updates.solverName = undefined; // Clear solver when reopening
+    }
+    await updateBug(bug.id, updates);
   };
 
   const handleResolve = async (bug: Bug) => {
