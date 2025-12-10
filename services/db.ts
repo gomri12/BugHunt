@@ -4,13 +4,14 @@ import { Bug, BugStatus, Session } from '../types';
 
 export const GLOBAL_SESSION_ID = '11111111-1111-1111-1111-111111111111';
 
-const channel = new BroadcastChannel('bug_hunt_live_updates');
+const channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('bug_hunt_live_updates') : null;
 
 export const notifyUpdate = (type: 'BUG_NEW' | 'BUG_UPDATE' | 'BUG_RESOLVED' | 'SESSION_UPDATE', payload?: any) => {
-  channel.postMessage({ type, payload });
+  channel?.postMessage({ type, payload });
 };
 
 export const onUpdate = (callback: (msg: any) => void) => {
+  if (!channel) return () => {};
   channel.onmessage = (event) => callback(event.data);
   return () => {
     channel.onmessage = null;
