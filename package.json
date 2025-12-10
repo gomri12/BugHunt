@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "homepage": "https://USERNAME.github.io/REPO_NAME",
+  "homepage": "https://gomri12.github.io/BugHunt",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
