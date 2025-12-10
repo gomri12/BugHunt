@@ -28,17 +28,19 @@ export const ControlPanel: React.FC = () => {
     
     const unsub = onUpdate((data) => {
       if (data.type === 'BUG_NEW') {
-        playGongSound();
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#ff00ff', '#00ff9d', '#00ccff', '#ffffff', '#764abc'],
-          startVelocity: 30,
-          gravity: 0.8,
-          ticks: 200,
-          shapes: ['circle', 'square'],
-        });
+        playGongSound().catch(err => console.error('Gong sound error:', err));
+        if (typeof confetti !== 'undefined') {
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#ff00ff', '#00ff9d', '#00ccff', '#ffffff', '#764abc'],
+            startVelocity: 30,
+            gravity: 0.8,
+            ticks: 200,
+            shapes: ['circle', 'square'],
+          });
+        }
       }
     });
     return unsub;

@@ -31,18 +31,35 @@ export const BugForm: React.FC<BugFormProps> = ({ username }) => {
         solverName: undefined,
       });
 
-      // Play gong sound and show fireworks
-      playGongSound();
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#ff00ff', '#00ff9d', '#00ccff', '#ffffff', '#764abc'],
-        startVelocity: 30,
-        gravity: 0.8,
-        ticks: 200,
-        shapes: ['circle', 'square'],
+      console.log('Bug added successfully, triggering celebration...');
+
+      // Play gong sound and show fireworks (don't await - let them run in parallel)
+      playGongSound().then(() => {
+        console.log('Gong sound played');
+      }).catch((soundError) => {
+        console.error('Error playing gong sound:', soundError);
       });
+
+      // Fireworks should always work even if audio doesn't
+      try {
+        if (typeof confetti !== 'undefined') {
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#ff00ff', '#00ff9d', '#00ccff', '#ffffff', '#764abc'],
+            startVelocity: 30,
+            gravity: 0.8,
+            ticks: 200,
+            shapes: ['circle', 'square'],
+          });
+          console.log('Fireworks triggered');
+        } else {
+          console.error('Confetti is not defined');
+        }
+      } catch (confettiError) {
+        console.error('Error triggering confetti:', confettiError);
+      }
 
       // Reset form
       setFormData({

@@ -57,12 +57,25 @@ export const playMilestoneSound = () => {
   }
 }
 
-export const playGongSound = () => {
+export const playGongSound = async () => {
   try {
     const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContext) return;
+    if (!AudioContext) {
+      console.warn('AudioContext not available');
+      return;
+    }
     
     const ctx = new AudioContext();
+    
+    // Resume context if suspended (required by browser autoplay policy)
+    if (ctx.state === 'suspended') {
+      try {
+        await ctx.resume();
+      } catch (err) {
+        console.warn('Failed to resume audio context:', err);
+        return; // Don't play sound if we can't resume
+      }
+    }
     
     // Create a gong-like sound using multiple oscillators with different frequencies
     // Gong sound is characterized by a rich harmonic series
