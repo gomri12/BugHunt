@@ -107,14 +107,18 @@ export const playGongSound = async () => {
       return;
     }
     
-    console.log('Playing gong sound, audio context state:', ctx.state);
+    console.log('Playing happy gong sound, audio context state:', ctx.state);
     
-    // Create a gong-like sound using multiple oscillators with different frequencies
-    // Gong sound is characterized by a rich harmonic series
-    const baseFreq = 220; // A3
-    const harmonics = [1, 2, 3, 4, 5, 6]; // Fundamental and harmonics
+    // Create a happy, cheerful gong sound using a major chord
+    // Using C major chord frequencies for a bright, happy sound
+    const frequencies = [
+      261.63,  // C4 - root
+      329.63,  // E4 - major third (happy interval)
+      392.00,  // G4 - perfect fifth
+      523.25,  // C5 - octave
+    ];
     
-    harmonics.forEach((harmonic, i) => {
+    frequencies.forEach((freq, i) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       const filter = ctx.createBiquadFilter();
@@ -123,29 +127,52 @@ export const playGongSound = async () => {
       filter.connect(gain);
       gain.connect(ctx.destination);
       
-      // Use sawtooth wave for rich harmonics, then filter
-      osc.type = 'sawtooth';
-      osc.frequency.value = baseFreq * harmonic;
+      // Use triangle wave for a softer, more pleasant sound
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
       
-      // Low-pass filter to soften the sound
-      filter.type = 'lowpass';
-      filter.frequency.value = 2000;
-      filter.Q.value = 1;
+      // Slight high-pass filter to brighten the sound
+      filter.type = 'highpass';
+      filter.frequency.value = 100;
+      filter.Q.value = 0.5;
       
-      const startTime = ctx.currentTime;
-      const duration = 1.5;
+      const startTime = ctx.currentTime + (i * 0.05); // Slight stagger for chord effect
+      const duration = 1.2;
       
-      // Envelope: quick attack, slow decay - increased volume
-      const maxGain = 0.3 / harmonic; // Increased from 0.15 to 0.3 for louder sound
+      // Envelope: quick attack, longer sustain, slow decay - MUCH LOUDER
+      const maxGain = 0.6 / (i + 1); // Much louder - 0.6 base, decreasing for higher notes
       gain.gain.setValueAtTime(0, startTime);
-      gain.gain.linearRampToValueAtTime(maxGain, startTime + 0.01); // Higher harmonics quieter
-      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+      gain.gain.linearRampToValueAtTime(maxGain, startTime + 0.02); // Quick attack
+      gain.gain.setValueAtTime(maxGain, startTime + 0.1); // Sustain
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration); // Slow decay
       
       osc.start(startTime);
       osc.stop(startTime + duration);
     });
     
-    console.log('Gong sound started');
+    // Add a bright "ting" sound for extra happiness
+    setTimeout(() => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.type = 'sine';
+      osc.frequency.value = 1046.50; // C6 - high, bright note
+      
+      const startTime = ctx.currentTime;
+      const duration = 0.3;
+      
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.4, startTime + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+      
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    }, 100);
+    
+    console.log('Happy gong sound started');
   } catch (e) {
     console.error("Gong sound playback failed", e);
   }
