@@ -13,7 +13,7 @@ export const ControlPanel: React.FC = () => {
   const [isResetting, setIsResetting] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  const { bugs } = useBugs(GLOBAL_SESSION_ID);
+  const { bugs, error: bugsError } = useBugs(GLOBAL_SESSION_ID);
   
   useEffect(() => {
     const stored = localStorage.getItem('bughunt_username');

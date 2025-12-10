@@ -19,7 +19,7 @@ export const Dashboard: React.FC = () => {
     if (stored) setUsername(stored);
   }, []);
   
-  const { bugs } = useBugs(GLOBAL_SESSION_ID);
+  const { bugs, error: bugsError } = useBugs(GLOBAL_SESSION_ID);
 
   // Stats calculation
   const stats = useMemo(() => {

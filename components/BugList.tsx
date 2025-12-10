@@ -11,8 +11,17 @@ interface BugListProps {
 }
 
 export const BugList: React.FC<BugListProps> = ({ readonly = false, username }) => {
-  const { bugs } = useBugs(GLOBAL_SESSION_ID);
+  const { bugs, error } = useBugs(GLOBAL_SESSION_ID);
 
+  if (error) {
+    return (
+      <div className="text-center py-12 border border-red-500/50 bg-red-500/10 rounded-xl p-6">
+        <p className="text-red-400 font-bold mb-2">Database Error</p>
+        <p className="text-red-300 text-sm">{error}</p>
+        <p className="text-red-300/70 text-xs mt-4">Make sure Supabase tables are set up. Check the console for details.</p>
+      </div>
+    );
+  }
   if (!bugs) return <div className="text-center py-8 text-neutral-500">Loading bugs...</div>;
   if (bugs.length === 0) return <div className="text-center py-12 text-neutral-500 border border-dashed border-neutral-800 rounded-xl">No bugs reported yet. Start hunting!</div>;
 

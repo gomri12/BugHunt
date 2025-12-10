@@ -32,15 +32,18 @@ const mapBug = (row: any): Bug => ({
 });
 
 export const ensureSession = async (sessionId: string, name = 'Global Session') => {
-  await supabase
+  const { error } = await supabase
     .from('sessions')
     .upsert({
       id: sessionId,
       name,
       start_time: new Date().toISOString(),
       is_active: true,
-    })
-    .throwOnError();
+    });
+  if (error) {
+    console.error('Failed to ensure session:', error);
+    throw error;
+  }
 };
 
 export const fetchBugs = async (sessionId: string) => {
@@ -103,7 +106,11 @@ export const updateBug = async (bugId: number, updates: Partial<Bug>) => {
 };
 
 export const clearDatabase = async (sessionId: string) => {
-  await supabase.from('bugs').delete().eq('session_id', sessionId).throwOnError();
+  const { error } = await supabase.from('bugs').delete().eq('session_id', sessionId);
+  if (error) {
+    console.error('Failed to clear database:', error);
+    throw error;
+  }
   notifyUpdate('SESSION_UPDATE', { type: 'RESET' });
 };
 
@@ -129,13 +136,23 @@ export const useBugs = (sessionId: string) => {
       try {
         await ensureSession(sessionId);
         const initial = await fetchBugs(sessionId);
-        if (isMounted) setBugs(initial);
+        if (isMounted) {
+          setBugs(initial);
+          setError(null);
+        }
       } catch (e: any) {
-        setError(e.message);
+        console.error('Error loading bugs:', e);
+        const errorMsg = e.message || 'Failed to load bugs. Make sure Supabase tables are set up.';
+        if (isMounted) setError(errorMsg);
       }
     })();
 
-    const unsubscribe = subscribeToBugs(sessionId, (b) => setBugs(b));
+    const unsubscribe = subscribeToBugs(sessionId, (b) => {
+      if (isMounted) {
+        setBugs(b);
+        setError(null);
+      }
+    });
     return () => {
       isMounted = false;
       unsubscribe();
