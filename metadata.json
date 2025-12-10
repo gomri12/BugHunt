@@ -1,0 +1,5 @@
+{
+  "name": "BugHunt Live",
+  "description": "Real-time bug tracking dashboard for team bug bash events. Features live updates, leaderboards, and celebratory effects.",
+  "requestFramePermissions": []
+}
