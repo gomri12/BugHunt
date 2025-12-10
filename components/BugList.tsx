@@ -89,7 +89,7 @@ export const BugList: React.FC<BugListProps> = ({ readonly = false, username }) 
                   <User className="w-4 h-4" />
                   Reported by <span className="text-white font-medium">{bug.reporterName}</span>
                 </div>
-                {bug.solverName && (
+                {bug.status === BugStatus.RESOLVED && bug.solverName && (
                   <div className="flex items-center gap-1 text-neon-green">
                     <Check className="w-4 h-4" />
                     Solved by <span className="font-bold">{bug.solverName}</span>
