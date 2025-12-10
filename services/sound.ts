@@ -1,11 +1,55 @@
+// Shared audio context for all sounds
+let sharedAudioContext: AudioContext | null = null;
 
-// Simple synth-based sound effect to avoid external assets for this demo
-export const playSuccessSound = () => {
+const getAudioContext = async (): Promise<AudioContext | null> => {
   try {
     const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContext) return;
+    if (!AudioContext) {
+      console.warn('AudioContext not available');
+      return null;
+    }
+
+    // Create or reuse shared context
+    if (!sharedAudioContext) {
+      sharedAudioContext = new AudioContext();
+    }
+
+    // Resume if suspended (required by browser autoplay policy)
+    if (sharedAudioContext.state === 'suspended') {
+      try {
+        await sharedAudioContext.resume();
+        console.log('Audio context resumed');
+      } catch (err) {
+        console.warn('Failed to resume audio context:', err);
+        return null;
+      }
+    }
+
+    return sharedAudioContext;
+  } catch (e) {
+    console.error('Error getting audio context:', e);
+    return null;
+  }
+};
+
+// Initialize audio context on first user interaction
+if (typeof window !== 'undefined') {
+  const initAudio = async () => {
+    await getAudioContext();
+    // Remove listeners after first initialization
+    window.removeEventListener('click', initAudio);
+    window.removeEventListener('touchstart', initAudio);
+  };
+  window.addEventListener('click', initAudio, { once: true });
+  window.addEventListener('touchstart', initAudio, { once: true });
+}
+
+// Simple synth-based sound effect to avoid external assets for this demo
+export const playSuccessSound = async () => {
+  try {
+    const ctx = await getAudioContext();
+    if (!ctx) return;
     
-    const ctx = new AudioContext();
     const oscillator = ctx.createOscillator();
     const gainNode = ctx.createGain();
 
@@ -26,12 +70,10 @@ export const playSuccessSound = () => {
   }
 };
 
-export const playMilestoneSound = () => {
+export const playMilestoneSound = async () => {
     try {
-    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContext) return;
-    
-    const ctx = new AudioContext();
+    const ctx = await getAudioContext();
+    if (!ctx) return;
     
     // Play a major chord arpeggio
     [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
@@ -59,23 +101,13 @@ export const playMilestoneSound = () => {
 
 export const playGongSound = async () => {
   try {
-    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContext) {
-      console.warn('AudioContext not available');
+    const ctx = await getAudioContext();
+    if (!ctx) {
+      console.warn('AudioContext not available for gong sound');
       return;
     }
     
-    const ctx = new AudioContext();
-    
-    // Resume context if suspended (required by browser autoplay policy)
-    if (ctx.state === 'suspended') {
-      try {
-        await ctx.resume();
-      } catch (err) {
-        console.warn('Failed to resume audio context:', err);
-        return; // Don't play sound if we can't resume
-      }
-    }
+    console.log('Playing gong sound, audio context state:', ctx.state);
     
     // Create a gong-like sound using multiple oscillators with different frequencies
     // Gong sound is characterized by a rich harmonic series
@@ -103,15 +135,17 @@ export const playGongSound = async () => {
       const startTime = ctx.currentTime;
       const duration = 1.5;
       
-      // Envelope: quick attack, slow decay
+      // Envelope: quick attack, slow decay - increased volume
+      const maxGain = 0.3 / harmonic; // Increased from 0.15 to 0.3 for louder sound
       gain.gain.setValueAtTime(0, startTime);
-      gain.gain.linearRampToValueAtTime(0.15 / harmonic, startTime + 0.01); // Higher harmonics quieter
+      gain.gain.linearRampToValueAtTime(maxGain, startTime + 0.01); // Higher harmonics quieter
       gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
       
       osc.start(startTime);
       osc.stop(startTime + duration);
     });
     
+    console.log('Gong sound started');
   } catch (e) {
     console.error("Gong sound playback failed", e);
   }

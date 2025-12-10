@@ -189,7 +189,9 @@ export const Dashboard: React.FC = () => {
           }, 200);
         }
       } else if (data.type === 'SESSION_UPDATE' && data.payload?.type === 'MILESTONE') {
-        if (soundEnabled) playMilestoneSound();
+        if (soundEnabled) {
+          playMilestoneSound().catch(err => console.error('Milestone sound error:', err));
+        }
         confetti({
             particleCount: 150,
             spread: 100,
