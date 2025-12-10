@@ -3,7 +3,7 @@ import { useBugs, onUpdate, GLOBAL_SESSION_ID } from '../services/db';
 import { StatsCards } from '../components/StatsCards';
 import { BugList } from '../components/BugList';
 import { LeaderboardChart } from '../components/Charts';
-import { BugStatus } from '../types';
+import { BugStatus, Bug } from '../types';
 import confetti from 'canvas-confetti';
 import { playSuccessSound, playMilestoneSound, playGongSound } from '../services/sound';
 import { Trophy, Volume2, VolumeX, Download } from 'lucide-react';
@@ -20,6 +20,93 @@ export const Dashboard: React.FC = () => {
   }, []);
   
   const { bugs, error: bugsError } = useBugs(GLOBAL_SESSION_ID);
+  const [previousBugs, setPreviousBugs] = useState<Bug[] | null>(null);
+
+  // Detect bug changes and trigger celebrations
+  useEffect(() => {
+    if (!bugs || bugs.length === 0) {
+      setPreviousBugs(bugs);
+      return;
+    }
+
+    if (previousBugs === null) {
+      // Initial load, just store current bugs
+      setPreviousBugs(bugs);
+      return;
+    }
+
+    // Find new bugs (bugs that weren't in previousBugs)
+    const previousBugIds = new Set(previousBugs.map(b => b.id).filter((id): id is number => id !== undefined));
+    const newBugs = bugs.filter(b => b.id !== undefined && !previousBugIds.has(b.id));
+    
+    // Find newly resolved bugs (bugs that changed from non-resolved to resolved)
+    const previousBugMap = new Map(previousBugs.map(b => [b.id, b]));
+    const newlyResolvedBugs = bugs.filter(b => {
+      if (!b.id) return false;
+      const prevBug = previousBugMap.get(b.id);
+      return b.status === BugStatus.RESOLVED && 
+             prevBug && 
+             prevBug.status !== BugStatus.RESOLVED;
+    });
+
+    // Trigger celebrations for new bugs
+    if (newBugs.length > 0) {
+      console.log('New bugs detected on Dashboard:', newBugs.length);
+      const latestNewBug = newBugs[0];
+      if (soundEnabled) {
+        playGongSound().catch(err => console.error('Gong sound error:', err));
+      }
+      if (typeof confetti !== 'undefined') {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#ff00ff', '#00ff9d', '#00ccff', '#ffffff', '#764abc'],
+          startVelocity: 30,
+          gravity: 0.8,
+          ticks: 200,
+          shapes: ['circle', 'square'],
+        });
+      }
+    }
+
+    // Trigger celebrations for resolved bugs
+    if (newlyResolvedBugs.length > 0) {
+      console.log('Resolved bugs detected on Dashboard:', newlyResolvedBugs.length);
+      const latestResolved = newlyResolvedBugs[0];
+      if (soundEnabled) {
+        playGongSound().catch(err => console.error('Gong sound error:', err));
+      }
+      if (typeof confetti !== 'undefined') {
+        // Bigger, more prominent fireworks for resolved bugs
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.7 },
+          colors: ['#00ff9d', '#ffffff', '#00ccff'],
+          startVelocity: 40,
+          gravity: 0.9,
+          ticks: 300,
+          shapes: ['circle', 'square'],
+        });
+        // Second burst for extra celebration
+        setTimeout(() => {
+          confetti({
+            particleCount: 100,
+            spread: 60,
+            origin: { y: 0.6 },
+            colors: ['#00ff9d', '#ffffff'],
+            startVelocity: 30,
+            gravity: 0.8,
+            ticks: 200,
+          });
+        }, 200);
+      }
+    }
+
+    // Update previous bugs
+    setPreviousBugs(bugs);
+  }, [bugs, previousBugs, soundEnabled]);
 
   // Stats calculation
   const stats = useMemo(() => {
