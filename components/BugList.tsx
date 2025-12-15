@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useBugs, updateBug, GLOBAL_SESSION_ID } from '../services/db';
 import { Bug, BugSeverity, BugStatus } from '../types';
 import { formatDistanceToNow } from 'date-fns';
 import { Check, Clock, User, ArrowRight, XCircle } from 'lucide-react';
 import clsx from 'clsx';
+import { BugSearch } from './BugSearch';
 
 interface BugListProps {
   readonly?: boolean;
@@ -12,6 +13,14 @@ interface BugListProps {
 
 export const BugList: React.FC<BugListProps> = ({ readonly = false, username }) => {
   const { bugs, error } = useBugs(GLOBAL_SESSION_ID);
+  const [filteredBugs, setFilteredBugs] = useState<Bug[]>([]);
+
+  // Initialize filtered bugs when bugs are first loaded
+  React.useEffect(() => {
+    if (bugs && bugs.length > 0 && filteredBugs.length === 0) {
+      setFilteredBugs(bugs);
+    }
+  }, [bugs]);
 
   if (error) {
     return (
@@ -53,9 +62,29 @@ export const BugList: React.FC<BugListProps> = ({ readonly = false, username }) 
     }
   };
 
+  // Use filtered bugs for display (BugSearch will initialize it with all bugs)
+  // Fallback to bugs if filteredBugs hasn't been initialized yet
+  const displayBugs = filteredBugs.length > 0 || (filteredBugs.length === 0 && bugs.length > 0) ? filteredBugs : bugs;
+  const hasActiveFilters = filteredBugs.length !== bugs.length && filteredBugs.length > 0;
+
   return (
     <div className="space-y-4">
-      {bugs.map(bug => (
+      {bugs && bugs.length > 0 && (
+        <BugSearch bugs={bugs} onFilteredBugsChange={setFilteredBugs} />
+      )}
+      
+      {displayBugs.length === 0 && bugs.length > 0 ? (
+        <div className="text-center py-12 text-neutral-500 border border-dashed border-neutral-800 rounded-xl">
+          No bugs match your search criteria.
+        </div>
+      ) : displayBugs.length > 0 ? (
+        <>
+          {hasActiveFilters && (
+            <div className="text-sm text-neutral-500 mb-4">
+              Showing {displayBugs.length} of {bugs.length} bug{bugs.length !== 1 ? 's' : ''}
+            </div>
+          )}
+          {displayBugs.map(bug => (
         <div 
             key={bug.id} 
             className={clsx(
@@ -136,6 +165,8 @@ export const BugList: React.FC<BugListProps> = ({ readonly = false, username }) 
           </div>
         </div>
       ))}
+        </>
+      ) : null}
     </div>
   );
 };
