@@ -189,7 +189,7 @@ export const subscribeToBugs = (sessionId: string, onChange: (bugs: Bug[]) => vo
 };
 
 export const addBug = async (sessionId: string, input: Omit<Bug, 'id' | 'createdAt' | 'updatedAt'>) => {
-  const { error } = await supabase.from('bugs').insert({
+  const { data, error } = await supabase.from('bugs').insert({
     session_id: sessionId,
     title: input.title,
     description: input.description,
@@ -197,12 +197,32 @@ export const addBug = async (sessionId: string, input: Omit<Bug, 'id' | 'created
     status: input.status,
     reporter_name: input.reporterName,
     solver_name: input.solverName ?? null,
-  });
+  }).select().single();
+  
   if (error) throw error;
+  
+  // Record event for gamification
+  if (data) {
+    const bug = mapBug(data);
+    try {
+      const { recordBugOpened } = await import('./events');
+      await recordBugOpened(bug);
+    } catch (e) {
+      console.warn('Failed to record bug_opened event:', e);
+    }
+  }
+  
   notifyUpdate('BUG_NEW', { title: input.title, reporter: input.reporterName });
 };
 
 export const updateBug = async (bugId: number, updates: Partial<Bug>) => {
+  // Fetch current bug state before update
+  const { data: currentBug } = await supabase
+    .from('bugs')
+    .select('*')
+    .eq('id', bugId)
+    .single();
+  
   const payload: any = {};
   if (updates.status !== undefined) payload.status = updates.status;
   // Handle solverName - can be set to a value or cleared (undefined/null)
@@ -213,6 +233,29 @@ export const updateBug = async (bugId: number, updates: Partial<Bug>) => {
 
   const { error } = await supabase.from('bugs').update(payload).eq('id', bugId);
   if (error) throw error;
+  
+  // Record events for gamification
+  if (currentBug) {
+    const oldBug = mapBug(currentBug);
+    const newStatus = updates.status ?? oldBug.status;
+    const newSolver = updates.solverName ?? oldBug.solverName;
+    
+    try {
+      const { recordBugFixed, recordBugReopened } = await import('./events');
+      
+      // Bug was resolved
+      if (oldBug.status !== BugStatus.RESOLVED && newStatus === BugStatus.RESOLVED && newSolver) {
+        await recordBugFixed(oldBug, newSolver);
+      }
+      // Bug was reopened
+      else if (oldBug.status === BugStatus.RESOLVED && newStatus !== BugStatus.RESOLVED) {
+        await recordBugReopened(oldBug);
+      }
+    } catch (e) {
+      console.warn('Failed to record bug event:', e);
+    }
+  }
+  
   notifyUpdate('BUG_UPDATE', { id: bugId, status: updates.status });
 };
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Bug as BugIcon, Monitor, Settings } from 'lucide-react';
+import { Bug as BugIcon, Monitor, Settings, Gamepad2 } from 'lucide-react';
 import clsx from 'clsx';
 
 interface LayoutProps {
@@ -10,6 +10,7 @@ interface LayoutProps {
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const isDashboard = location.pathname === '/dashboard';
+  const isGamified = location.pathname === '/gamified';
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col font-sans">
@@ -23,6 +24,18 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </Link>
           
           <nav className="flex items-center gap-4">
+            {!isGamified && (
+              <Link 
+                to="/gamified"
+                className={clsx(
+                    "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
+                    "text-neutral-400 hover:text-white hover:bg-neutral-800"
+                )}
+              >
+                <Gamepad2 className="w-4 h-4" />
+                Gamified
+              </Link>
+            )}
             <Link 
               to={isDashboard ? "/" : "/dashboard"}
               className={clsx(

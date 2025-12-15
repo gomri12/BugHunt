@@ -3,6 +3,7 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { ControlPanel } from './pages/ControlPanel';
+import { GamifiedDashboard } from './pages/GamifiedDashboard';
 
 const App: React.FC = () => {
   return (
@@ -11,6 +12,7 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<ControlPanel />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/gamified" element={<GamifiedDashboard />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
