@@ -281,4 +281,3 @@ export const importBugsFromCSV = async (file: File): Promise<{ success: number; 
     reader.readAsText(file);
   });
 };
-
