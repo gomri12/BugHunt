@@ -1,0 +1,6 @@
+ID,Title,Description,Severity,Status,Reporter,Solver,Created At,Updated At
+1,"Test Bug 1","This is a test bug description with quotes and, commas","HIGH","NEW","Test User","","2024-01-01 10:00:00","2024-01-01 10:00:00"
+2,"Test Bug 2","Another test bug for validation","MEDIUM","IN_PROGRESS","Admin User","John Doe","2024-01-01 11:00:00","2024-01-01 11:00:00"
+3,"Test Bug 3","Bug with ""escaped quotes"" in description","LOW","RESOLVED","Test User","Jane Smith","2024-01-01 12:00:00","2024-01-01 12:00:00"
+4,"Test Bug 4","Critical bug that needs attention","CRITICAL","NEW","Admin User","","2024-01-01 13:00:00","2024-01-01 13:00:00"
+

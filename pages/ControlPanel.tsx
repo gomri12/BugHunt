@@ -3,9 +3,10 @@ import { useBugs, GLOBAL_SESSION_ID, clearDatabase, onUpdate } from '../services
 import { BugForm } from '../components/BugForm';
 import { BugList } from '../components/BugList';
 import { exportBugsToCSV } from '../services/export';
+import { importBugsFromCSV } from '../services/import';
 import { playGongSound } from '../services/sound';
 import confetti from 'canvas-confetti';
-import { User, LogOut, Download, ArrowRight, Bug, Trash2, Lock, AlertTriangle, Loader2 } from 'lucide-react';
+import { User, LogOut, Download, Upload, ArrowRight, Bug, Trash2, Lock, AlertTriangle, Loader2 } from 'lucide-react';
 
 export const ControlPanel: React.FC = () => {
   const [username, setUsername] = useState<string | null>(null);
@@ -14,6 +15,8 @@ export const ControlPanel: React.FC = () => {
   const [loginError, setLoginError] = useState('');
   const [isResetting, setIsResetting] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ success: number; errors: string[] } | null>(null);
 
   const { bugs, error: bugsError } = useBugs(GLOBAL_SESSION_ID);
   
@@ -79,6 +82,38 @@ export const ControlPanel: React.FC = () => {
   const handleExport = () => {
     if (bugs) {
         exportBugsToCSV(bugs, 'Global Session');
+    }
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset file input
+    e.target.value = '';
+
+    if (!file.name.endsWith('.csv')) {
+      alert('Please select a CSV file');
+      return;
+    }
+
+    setIsImporting(true);
+    setImportResult(null);
+
+    try {
+      const result = await importBugsFromCSV(file);
+      setImportResult(result);
+      
+      if (result.success > 0) {
+        alert(`Successfully imported ${result.success} bug(s)${result.errors.length > 0 ? `\n\nErrors: ${result.errors.length}` : ''}`);
+      } else {
+        alert(`Import failed:\n${result.errors.join('\n')}`);
+      }
+    } catch (error: any) {
+      console.error('Import error:', error);
+      alert(`Import failed: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -201,6 +236,25 @@ export const ControlPanel: React.FC = () => {
                 >
                     <Download className="w-4 h-4" /> Export CSV
                 </button>
+                
+                <label className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer">
+                    {isImporting ? (
+                        <>
+                            <Loader2 className="w-4 h-4 animate-spin" /> Importing...
+                        </>
+                    ) : (
+                        <>
+                            <Upload className="w-4 h-4" /> Import CSV
+                        </>
+                    )}
+                    <input
+                        type="file"
+                        accept=".csv"
+                        onChange={handleImport}
+                        disabled={isImporting}
+                        className="hidden"
+                    />
+                </label>
                 
                 {!showResetConfirm ? (
                     <button 
