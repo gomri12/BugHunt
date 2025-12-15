@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useBugs, GLOBAL_SESSION_ID, clearDatabase, onUpdate } from '../services/db';
 import { BugForm } from '../components/BugForm';
 import { BugList } from '../components/BugList';
+import { DuplicateSuggestions } from '../components/DuplicateSuggestions';
 import { exportBugsToCSV } from '../services/export';
 import { importBugsFromCSV } from '../services/import';
 import { playGongSound } from '../services/sound';
@@ -292,6 +293,15 @@ export const ControlPanel: React.FC = () => {
         <section>
           <BugForm username={username} />
         </section>
+
+        {username === 'Omri Glam' && (
+          <section>
+            <h2 className="text-xl font-bold mb-3 flex items-center gap-2">
+              Possible Duplicates
+            </h2>
+            <DuplicateSuggestions bugs={bugs ?? []} />
+          </section>
+        )}
 
         <section>
           <div className="flex items-center justify-between mb-4">

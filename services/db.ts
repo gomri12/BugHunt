@@ -259,6 +259,19 @@ export const updateBug = async (bugId: number, updates: Partial<Bug>) => {
   notifyUpdate('BUG_UPDATE', { id: bugId, status: updates.status });
 };
 
+export const deleteBug = async (bugId: number) => {
+  try {
+    // Optionally, record a bug_marked_duplicate event before deletion via events service
+    // but since this is an admin-only cleanup operation, we'll just delete for now.
+    const { error } = await supabase.from('bugs').delete().eq('id', bugId);
+    if (error) throw error;
+    notifyUpdate('BUG_UPDATE', { id: bugId, status: 'DELETED' });
+  } catch (e) {
+    console.error('Failed to delete bug:', e);
+    throw e;
+  }
+};
+
 export const clearDatabase = async (sessionId: string) => {
   const { error } = await supabase.from('bugs').delete().eq('session_id', sessionId);
   if (error) {
