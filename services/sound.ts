@@ -177,3 +177,40 @@ export const playGongSound = async () => {
     console.error("Gong sound playback failed", e);
   }
 }
+
+// Random \"Great Success\" sounds from local media folder
+// These imports assume a top-level `media/` folder in the project root.
+// Vite will bundle these files and give us URLs at build time.
+import boratKing from '../media/borat-king-in-the-castle-audiotrimmer.mp3';
+import boratGreatSuccess from '../media/great-success-borat.mp3';
+import boratVeryNice from '../media/its-a-very-nice.mp3';
+
+// Optional extra URL from env, if you want to add more sounds without rebuilding
+const GREAT_SUCCESS_URL = (import.meta as any).env?.VITE_GREAT_SUCCESS_URL as string | undefined;
+
+const GREAT_SUCCESS_SOUNDS: string[] = [
+  boratKing,
+  boratGreatSuccess,
+  boratVeryNice,
+  GREAT_SUCCESS_URL,
+].filter(Boolean) as string[];
+
+export const playGreatSuccessSound = async () => {
+  try {
+    // Prefer random sound from bundled media (and optional env URL)
+    if (GREAT_SUCCESS_SOUNDS.length > 0) {
+      const index = Math.floor(Math.random() * GREAT_SUCCESS_SOUNDS.length);
+      const url = GREAT_SUCCESS_SOUNDS[index];
+      const audio = new Audio(url);
+      await audio.play();
+      return;
+    }
+
+    // Fallback to existing happy gong sound if no media configured
+    await playGongSound();
+  } catch (e) {
+    console.error('Great Success sound playback failed', e);
+    // Last fallback: simple success synth
+    await playSuccessSound();
+  }
+};

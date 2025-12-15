@@ -5,7 +5,7 @@ import { BugList } from '../components/BugList';
 import { LeaderboardChart } from '../components/Charts';
 import { BugStatus, Bug } from '../types';
 import confetti from 'canvas-confetti';
-import { playSuccessSound, playMilestoneSound, playGongSound } from '../services/sound';
+import { playSuccessSound, playMilestoneSound, playGongSound, playGreatSuccessSound } from '../services/sound';
 import { Trophy, Volume2, VolumeX, Download } from 'lucide-react';
 import { exportBugsToCSV } from '../services/export';
 
@@ -159,9 +159,9 @@ export const Dashboard: React.FC = () => {
           });
         }
       } else if (data.type === 'BUG_RESOLVED') {
-        // Play gong sound and show fireworks for resolved bugs
+        // Play Great Success sound and show fireworks for resolved bugs
         if (soundEnabled) {
-          playGongSound().catch(err => console.error('Gong sound error:', err));
+          playGreatSuccessSound().catch(err => console.error('Great Success sound error:', err));
         }
         if (typeof confetti !== 'undefined') {
           // Bigger, more prominent fireworks for resolved bugs

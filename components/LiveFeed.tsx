@@ -3,7 +3,7 @@ import { BugEvent, subscribeToEvents, fetchRecentEvents } from '../services/even
 import { BugSeverity } from '../types';
 import { formatDistanceToNow } from 'date-fns';
 import { Bug, CheckCircle, AlertTriangle, XCircle, Zap } from 'lucide-react';
-import { playGongSound } from '../services/sound';
+import { playGongSound, playGreatSuccessSound } from '../services/sound';
 import clsx from 'clsx';
 
 interface LiveFeedProps {
@@ -29,9 +29,9 @@ export const LiveFeed: React.FC<LiveFeedProps> = ({ soundEnabled = true }) => {
       // Play sound for important events
       if (soundEnabled) {
         if (newEvent.type === 'bug_fixed' && newEvent.severity === BugSeverity.CRITICAL) {
-          playGongSound().catch(console.error);
+          playGreatSuccessSound().catch(console.error);
         } else if (newEvent.type === 'bug_fixed') {
-          playGongSound().catch(console.error);
+          playGreatSuccessSound().catch(console.error);
         }
       }
     });

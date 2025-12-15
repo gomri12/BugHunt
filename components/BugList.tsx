@@ -5,6 +5,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Check, Clock, User, ArrowRight, XCircle } from 'lucide-react';
 import clsx from 'clsx';
 import { BugSearch } from './BugSearch';
+import { playGreatSuccessSound } from '../services/sound';
 
 interface BugListProps {
   readonly?: boolean;
@@ -48,9 +49,16 @@ export const BugList: React.FC<BugListProps> = ({ readonly = false, username }) 
     if (!bug.id || !username) return;
 
     await updateBug(bug.id, {
-        status: BugStatus.RESOLVED,
-        solverName: username,
+      status: BugStatus.RESOLVED,
+      solverName: username,
     });
+
+    // Play \"Great Success\" sound when a bug is resolved
+    try {
+      await playGreatSuccessSound();
+    } catch (e) {
+      console.error('Failed to play Great Success sound', e);
+    }
   };
 
   const severityColor = (sev: BugSeverity) => {
