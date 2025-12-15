@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useBugs, updateBug, GLOBAL_SESSION_ID } from '../services/db';
+import { useBugs, updateBug, GLOBAL_SESSION_ID, deleteBug } from '../services/db';
 import { Bug, BugSeverity, BugStatus } from '../types';
 import { formatDistanceToNow } from 'date-fns';
-import { Check, Clock, User, ArrowRight, XCircle } from 'lucide-react';
+import { Check, Clock, User, ArrowRight, XCircle, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 import { BugSearch } from './BugSearch';
 import { playGreatSuccessSound } from '../services/sound';
@@ -58,6 +58,23 @@ export const BugList: React.FC<BugListProps> = ({ readonly = false, username }) 
       await playGreatSuccessSound();
     } catch (e) {
       console.error('Failed to play Great Success sound', e);
+    }
+  };
+
+  const handleDelete = async (bug: Bug) => {
+    if (!bug.id) return;
+    if (username !== 'Omri Glam') return; // extra safety – only admin
+
+    const confirmed = window.confirm(
+      `Delete bug \"${bug.title}\"?\nThis cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      await deleteBug(bug.id);
+    } catch (e) {
+      console.error('Failed to delete bug', e);
+      alert('Failed to delete bug');
     }
   };
 
@@ -135,40 +152,51 @@ export const BugList: React.FC<BugListProps> = ({ readonly = false, username }) 
               </div>
             </div>
 
-            {!readonly && bug.status !== BugStatus.RESOLVED && (
-              <div className="flex flex-col gap-2 min-w-[200px] border-l border-neutral-800 pl-4">
+            {!readonly && (
+              <div className="flex flex-col gap-2 min-w-[220px] border-l border-neutral-800 pl-4">
                 <p className="text-xs font-bold text-neutral-500 uppercase">Actions</p>
-                
-                {bug.status === BugStatus.NEW && (
-                    <button 
+
+                {bug.status !== BugStatus.RESOLVED && (
+                  <>
+                    {bug.status === BugStatus.NEW && (
+                      <button
                         onClick={() => handleStatusChange(bug, BugStatus.IN_PROGRESS)}
                         className="w-full text-left px-3 py-2 rounded hover:bg-neutral-800 text-sm flex items-center gap-2"
-                    >
+                      >
                         <ArrowRight className="w-4 h-4 text-yellow-500" /> Mark In Progress
-                    </button>
-                )}
+                      </button>
+                    )}
 
-                <div className="mt-2 pt-2 border-t border-neutral-800">
-                    <button 
+                    <div className="mt-2 pt-2 border-t border-neutral-800">
+                      <button
                         onClick={() => handleResolve(bug)}
                         className="w-full bg-neon-green/20 hover:bg-neon-green/30 text-neon-green border border-neon-green/50 px-3 py-2 rounded text-sm font-bold flex items-center justify-center gap-2 transition-colors"
-                        title={username ? `Resolve as ${username}` : "Log in to resolve"}
-                    >
+                        title={username ? `Resolve as ${username}` : 'Log in to resolve'}
+                      >
                         <Check className="w-4 h-4" /> Resolve Bug
-                    </button>
-                </div>
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {bug.status === BugStatus.RESOLVED && (
+                  <button
+                    onClick={() => handleStatusChange(bug, BugStatus.IN_PROGRESS)}
+                    className="text-neutral-500 hover:text-white text-sm flex items-center gap-1"
+                  >
+                    <XCircle className="w-4 h-4" /> Re-open
+                  </button>
+                )}
+
+                {username === 'Omri Glam' && (
+                  <button
+                    onClick={() => handleDelete(bug)}
+                    className="mt-2 text-red-400 hover:text-red-300 text-xs flex items-center gap-1"
+                  >
+                    <Trash2 className="w-3 h-3" /> Delete (Admin)
+                  </button>
+                )}
               </div>
-            )}
-            
-            {!readonly && bug.status === BugStatus.RESOLVED && (
-                 <div className="flex flex-col justify-center border-l border-neutral-800 pl-4">
-                    <button 
-                        onClick={() => handleStatusChange(bug, BugStatus.IN_PROGRESS)}
-                        className="text-neutral-500 hover:text-white text-sm flex items-center gap-1"
-                    >
-                        <XCircle className="w-4 h-4" /> Re-open
-                    </button>
-                 </div>
             )}
           </div>
         </div>
