@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from './supabaseClient';
+import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { Bug, BugStatus, Session } from '../types';
 
 export const GLOBAL_SESSION_ID = '11111111-1111-1111-1111-111111111111';
@@ -299,6 +299,15 @@ export const useBugs = (sessionId: string) => {
 
   useEffect(() => {
     let isMounted = true;
+    if (!isSupabaseConfigured) {
+      setError(
+        'Supabase is not configured for this build. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (or VITE_SUPABASE_PUBLISHABLE_KEY) as GitHub repo secrets, then redeploy.'
+      );
+      setBugs([]);
+      return () => {
+        isMounted = false;
+      };
+    }
     (async () => {
       try {
         await ensureSession(sessionId);
