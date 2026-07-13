@@ -13,6 +13,7 @@ const App: React.FC = () => {
           <Route path="/" element={<ControlPanel />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/gamified" element={<GamifiedDashboard />} />
+          <Route path="/session/:id/control" element={<ControlPanel />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

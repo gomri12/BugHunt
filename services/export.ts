@@ -47,4 +47,6 @@ export const exportBugsToCSV = (bugs: Bug[], sessionName: string = 'session') =>
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  // Delay revoke so the browser can finish starting the download (esp. Firefox)
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 };

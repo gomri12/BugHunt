@@ -285,8 +285,8 @@ export const createSession = async (session: Session) => {
   const { data, error } = await supabase.from('sessions').insert({
     id: session.id,
     name: session.name,
-    start_time: session.startTime,
-    end_time: session.endTime ?? null,
+    start_time: session.startTime instanceof Date ? session.startTime.toISOString() : session.startTime,
+    end_time: session.endTime != null ? (session.endTime instanceof Date ? session.endTime.toISOString() : session.endTime) : null,
     is_active: session.isActive,
   }).select().single();
   if (error) throw error;
